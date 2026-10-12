@@ -1,0 +1,4 @@
+CC0 assets bundled in this project:
+
+- Kenney Nature Kit — https://kenney.nl/assets/nature-kit  (CC0)
+- KayKit Adventurers (Knight, Barbarian, sword, shield) — https://kaylousberg.itch.io/kaykit-adventurers  (CC0)

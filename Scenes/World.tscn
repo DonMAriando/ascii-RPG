@@ -1,0 +1,121 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://Scripts/World.gd" id="1_world"]
+[ext_resource type="PackedScene" path="res://Scenes/Player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://Scenes/Mob.tscn" id="3_mob"]
+[ext_resource type="Script" path="res://Scripts/CameraFollow.gd" id="4_camera"]
+[ext_resource type="Shader" path="res://Shaders/forest_ground.gdshader" id="5_ground"]
+[ext_resource type="Shader" path="res://Shaders/ascii_filter.gdshader" id="6_ascii_shader"]
+[ext_resource type="Script" path="res://Scripts/AsciiOverlay.gd" id="7_ascii"]
+[ext_resource type="Script" path="res://Scripts/ForestGenerator.gd" id="8_forest"]
+[ext_resource type="Script" path="res://Scripts/DayNightCycle.gd" id="9_daynight"]
+
+[sub_resource type="Environment" id="Environment_world"]
+background_mode = 1
+background_color = Color(0.05, 0.07, 0.06, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.32, 0.4, 0.3, 1)
+ambient_light_energy = 0.42
+tonemap_mode = 2
+ssao_enabled = false
+glow_enabled = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ground"]
+shader = ExtResource("5_ground")
+shader_parameter/grass_a = Color(0.22, 0.38, 0.16, 1)
+shader_parameter/grass_b = Color(0.14, 0.26, 0.11, 1)
+shader_parameter/dirt = Color(0.28, 0.22, 0.14, 1)
+shader_parameter/roughness_value = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(80, 0.4, 80)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(80, 0.4, 80)
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_world"]
+agent_radius = 0.5
+agent_height = 1.75
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ascii"]
+shader = ExtResource("6_ascii_shader")
+shader_parameter/cell_px = 10.0
+shader_parameter/glyph_count = 10
+shader_parameter/contrast = 1.22
+shader_parameter/brightness = 0.02
+shader_parameter/background_color = Vector3(0.015, 0.02, 0.025)
+shader_parameter/edge_boost = 2.8
+shader_parameter/color_boost = 1.28
+
+[node name="World" type="Node3D"]
+script = ExtResource("1_world")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_world")
+
+[node name="DayNightCycle" type="Node" parent="."]
+script = ExtResource("9_daynight")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.907571, 0.663225, 0)
+light_energy = 1.35
+light_color = Color(1, 0.96, 0.82, 1)
+shadow_enabled = true
+directional_shadow_mode = 2
+directional_shadow_max_distance = 70.0
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavigationMesh_world")
+
+[node name="Floor" type="StaticBody3D" parent="NavigationRegion3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="NavigationRegion3D/Floor"]
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("ShaderMaterial_ground")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NavigationRegion3D/Floor"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="Forest" type="Node3D" parent="."]
+script = ExtResource("8_forest")
+
+[node name="Waters" type="Node3D" parent="."]
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+
+[node name="Mob1" parent="." instance=ExtResource("3_mob")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.5, 0, -8)
+
+[node name="Mob2" parent="." instance=ExtResource("3_mob")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 8.5)
+
+[node name="CameraRig" type="Node3D" parent="."]
+script = ExtResource("4_camera")
+target_path = NodePath("../Player")
+ortho_size = 11.5
+camera_distance = 24.0
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 26)
+projection = 1
+size = 13.0
+near = 0.05
+far = 140.0
+current = true
+
+[node name="AsciiLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="AsciiOverlay" type="ColorRect" parent="AsciiLayer"]
+material = SubResource("ShaderMaterial_ascii")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+script = ExtResource("7_ascii")

@@ -1,0 +1,8 @@
+Models/_tmp/
+.godot/
+.import/
+.mono/
+*.translation
+export_credentials.cfg
+.DS_Store
+Thumbs.db

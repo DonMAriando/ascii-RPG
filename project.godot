@@ -1,0 +1,55 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="ASCII ARPG"
+config/description="ARPG isométrico point-and-click con post-proceso ASCII en Godot 4.7"
+config/version="0.1.0"
+run/main_scene="res://Scenes/World.tscn"
+config/features=PackedStringArray("4.7", "Forward Plus")
+config/icon="res://icon.svg"
+
+[debug]
+
+gdscript/warnings/infer_variant=1
+gdscript/warnings/native_method_unused_return=1
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="viewport"
+window/stretch/aspect="expand"
+
+[dotnet]
+
+project/assembly_name="ASCII ARPG"
+
+[input]
+
+clic_izquierdo={
+"deadzone": 0.5,
+"events": [Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":1,"position":Vector2(0, 0),"global_position":Vector2(0, 0),"factor":1.0,"button_index":1,"canceled":false,"pressed":false,"double_click":false,"script":null)
+]
+}
+
+[layer_names]
+
+3d_physics/layer_1="terreno"
+3d_physics/layer_2="personajes"
+
+[rendering]
+
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3
+anti_aliasing/quality/msaa_3d=2
+environment/defaults/default_clear_color=Color(0.03, 0.035, 0.045, 1)
