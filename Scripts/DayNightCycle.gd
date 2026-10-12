@@ -16,7 +16,7 @@ var _campfire: OmniLight3D
 func _ready() -> void:
 	_make_label()
 	_find_campfire()
-	_apply(0.0)
+	_apply(_time)
 
 
 func _process(delta: float) -> void:
@@ -31,75 +31,66 @@ func _apply(elapsed: float) -> void:
 		return
 
 	var cycle := day_seconds + night_seconds
-	var t := fmod(elapsed, cycle)
-	var is_day := t < day_seconds
-	var phase_t := t / day_seconds if is_day else (t - day_seconds) / night_seconds
-	var day_factor := _day_factor(is_day, phase_t)
+	var t := fposmod(elapsed, cycle)
+	var day_factor := _day_factor(t)
+	var clock := t / cycle
 	var env := _world_env.environment
 
-	var sun_color := _sample_sun_color(day_factor, is_day, phase_t)
-	_sun.light_color = sun_color
-	_sun.light_energy = lerpf(0.22, 1.45, day_factor)
+	_sun.light_color = _sample_sun_color(t, day_factor)
+	_sun.light_energy = lerpf(0.18, 1.45, day_factor)
 	_sun.rotation_degrees = Vector3(
-		lerpf(-22.0, -58.0, day_factor),
-		lerpf(-70.0, 130.0, phase_t if is_day else 1.0 - phase_t),
+		lerpf(-18.0, -58.0, day_factor),
+		lerpf(-70.0, 290.0, clock),
 		0.0
 	)
 
-	env.background_color = _day_sky.lerp(_night_sky, 1.0 - day_factor)
-	env.ambient_light_color = _day_ambient.lerp(_night_ambient, 1.0 - day_factor)
-	env.ambient_light_energy = lerpf(0.48, 0.18, 1.0 - day_factor)
+	env.background_color = _night_sky.lerp(_day_sky, day_factor)
+	env.ambient_light_color = _night_ambient.lerp(_day_ambient, day_factor)
+	env.ambient_light_energy = lerpf(0.16, 0.48, day_factor)
 	env.fog_enabled = true
 	env.fog_light_color = env.background_color
-	env.fog_density = lerpf(0.0006, 0.0035, 1.0 - day_factor)
+	env.fog_density = lerpf(0.0035, 0.0006, day_factor)
 
 	if _campfire:
-		_campfire.light_energy = lerpf(0.15, 2.4, 1.0 - day_factor)
+		_campfire.light_energy = lerpf(2.4, 0.15, day_factor)
 		_campfire.light_color = Color(1.0, 0.52, 0.18)
 
 	if _label:
-		_label.text = _phase_name(is_day, phase_t, day_factor)
+		_label.text = _phase_name(t, day_factor)
 		_label.modulate = Color(0.85, 0.9, 0.7, 0.85)
 
 
-func _day_factor(is_day: bool, phase_t: float) -> float:
-	var fade := twilight_seconds / maxf(day_seconds if is_day else night_seconds, 0.001)
-	if is_day:
-		if phase_t < fade:
-			return smoothstep(0.0, 1.0, phase_t / fade)
-		if phase_t > 1.0 - fade:
-			return smoothstep(0.0, 1.0, (1.0 - phase_t) / fade)
+func _day_factor(t: float) -> float:
+	var fade := minf(twilight_seconds, day_seconds * 0.45)
+	if t < fade:
+		return smoothstep(0.0, fade, t)
+	if t < day_seconds - fade:
 		return 1.0
-	if phase_t < fade:
-		return 1.0 - smoothstep(0.0, 1.0, phase_t / fade)
-	if phase_t > 1.0 - fade:
-		return smoothstep(0.0, 1.0, (phase_t - (1.0 - fade)) / fade)
+	if t < day_seconds:
+		return smoothstep(0.0, fade, day_seconds - t)
 	return 0.0
 
 
-func _sample_sun_color(day_factor: float, is_day: bool, phase_t: float) -> Color:
-	var fade := twilight_seconds / maxf(day_seconds if is_day else night_seconds, 0.001)
-	if is_day and phase_t < fade:
+func _sample_sun_color(t: float, day_factor: float) -> Color:
+	var fade := minf(twilight_seconds, day_seconds * 0.45)
+	if t < fade:
 		return _dawn_sun.lerp(_noon_sun, day_factor)
-	if is_day and phase_t > 1.0 - fade:
+	if t >= day_seconds - fade and t < day_seconds:
 		return _dusk_sun.lerp(_noon_sun, day_factor)
 	if day_factor > 0.5:
 		return _noon_sun
-	return _moon.lerp(_dusk_sun, day_factor * 2.0)
+	return _moon
 
 
-func _phase_name(is_day: bool, phase_t: float, day_factor: float) -> String:
-	if day_factor > 0.85:
+func _phase_name(t: float, _day_factor: float) -> String:
+	var fade := minf(twilight_seconds, day_seconds * 0.45)
+	if t < fade:
+		return "AMANECER"
+	if t < day_seconds - fade:
 		return "DIA"
-	if day_factor < 0.15:
-		return "NOCHE"
-	if is_day and phase_t < 0.5:
-		return "AMANECER"
-	if is_day:
+	if t < day_seconds:
 		return "ATARDECER"
-	if phase_t > 0.5:
-		return "AMANECER"
-	return "ATARDECER"
+	return "NOCHE"
 
 
 func _make_label() -> void:

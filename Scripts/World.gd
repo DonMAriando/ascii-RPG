@@ -19,15 +19,25 @@ func _ready() -> void:
 	_spawn_water()
 	if _forest.has_method("generate"):
 		_forest.call("generate", _nav_region, _water_rects)
+	_spawn_camp_mobs()
 	_bake_navigation()
 	if OS.get_cmdline_user_args().has("--test-walk"):
 		call_deferred("_run_walk_test")
 	if OS.get_cmdline_user_args().has("--test-click"):
 		call_deferred("_run_click_test")
+	if OS.get_cmdline_user_args().has("--test-combat"):
+		call_deferred("_run_combat_test")
+	if OS.get_cmdline_user_args().has("--test-hud"):
+		call_deferred("_run_hud_test")
+	if OS.get_cmdline_user_args().has("--test-magic"):
+		call_deferred("_run_magic_test")
 
 
 func _input(event: InputEvent) -> void:
 	if not _is_left_click(event):
+		return
+	var hovered := get_viewport().gui_get_hovered_control()
+	if hovered != null and hovered.mouse_filter != Control.MOUSE_FILTER_IGNORE:
 		return
 	_send_click_to_player(get_viewport().get_mouse_position())
 
@@ -87,3 +97,117 @@ func _run_click_test() -> void:
 	var screen := Vector2(1080, 160)
 	get_viewport().warp_mouse(screen)
 	_send_click_to_player(screen)
+
+
+func _spawn_camp_mobs() -> void:
+	var packed := load("res://Scenes/Mob.tscn") as PackedScene
+	if packed == null:
+		return
+	var spots: Array[Vector3] = [
+		Vector3(2.8, 0.0, 2.5),
+		Vector3(10.5, 0.0, 3.2),
+		Vector3(-9.5, 0.0, -10.0),
+	]
+	for i in spots.size():
+		var mob := packed.instantiate() as Node3D
+		mob.name = "CampMob%d" % (i + 1)
+		add_child(mob)
+		mob.global_position = spots[i]
+
+
+func _run_hud_test() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null:
+		player.set("hp", 28)
+		player.set("mp", 16)
+		if player.has_method("_refresh_hp"):
+			player.call("_refresh_hp")
+	var hud := get_tree().get_first_node_in_group("player_hud")
+	if hud != null and hud.has_method("set_hud_visible"):
+		hud.call("set_hud_visible", true)
+	get_tree().create_timer(0.55).timeout.connect(_dump_hud_orbs)
+
+
+func _dump_hud_orbs() -> void:
+	_save_hud_png("user://hud_orbs.png")
+	var hud := get_tree().get_first_node_in_group("player_hud")
+	if hud != null and hud.has_method("toggle_magic_tree"):
+		hud.call("toggle_magic_tree")
+	get_tree().create_timer(0.35).timeout.connect(_dump_hud_tree)
+
+
+func _dump_hud_tree() -> void:
+	_save_hud_png("user://hud_tree.png")
+	get_tree().quit()
+
+
+func _save_hud_png(path: String) -> void:
+	var image := get_viewport().get_texture().get_image()
+	if image:
+		image.save_png(path)
+		print("HUD_TEST saved=", ProjectSettings.globalize_path(path))
+
+
+func _run_magic_test() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	var enemy := get_node_or_null("CampMob1") as Node3D
+	if enemy == null:
+		enemy = get_tree().get_first_node_in_group("enemy") as Node3D
+	if player != null:
+		player.set("essence", 12)
+		if player.has_method("try_unlock_rune"):
+			player.call("try_unlock_rune", "fuego")
+		if enemy != null:
+			player.global_position = enemy.global_position + Vector3(-2.2, 0.05, 0.4)
+			if player.has_method("request_firebolt"):
+				player.call("request_firebolt")
+	get_tree().create_timer(2.2).timeout.connect(_dump_magic_frame)
+
+
+func _dump_magic_frame() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	var enemy := get_node_or_null("CampMob1")
+	var mp := 0
+	var essence := 0
+	var enemy_hp := 0
+	var fuego := false
+	if player != null:
+		mp = int(player.get("mp"))
+		essence = int(player.get("essence"))
+		if player.has_method("has_rune"):
+			fuego = bool(player.call("has_rune", "fuego"))
+	if enemy != null:
+		enemy_hp = int(enemy.get("hp"))
+	print("MAGIC_TEST mp=%d essence=%d fuego=%s enemy_hp=%d" % [mp, essence, fuego, enemy_hp])
+	var image := get_viewport().get_texture().get_image()
+	if image:
+		image.save_png("user://magic_test.png")
+		print("MAGIC_TEST saved=", ProjectSettings.globalize_path("user://magic_test.png"))
+	get_tree().quit()
+
+
+func _run_combat_test() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	var enemy := get_node_or_null("CampMob1") as Node3D
+	if enemy == null:
+		enemy = get_tree().get_first_node_in_group("enemy") as Node3D
+	if player != null and enemy != null and player.has_method("attack_node"):
+		player.call("attack_node", enemy)
+	get_tree().create_timer(5.0).timeout.connect(_dump_combat_frame)
+
+
+func _dump_combat_frame() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	var enemy := get_node_or_null("CampMob1")
+	var player_hp := 0
+	var enemy_hp := 0
+	if player != null:
+		player_hp = int(player.get("hp"))
+	if enemy != null:
+		enemy_hp = int(enemy.get("hp"))
+	print("COMBAT_TEST player_hp=%d enemy_hp=%d" % [player_hp, enemy_hp])
+	var image := get_viewport().get_texture().get_image()
+	if image:
+		image.save_png("user://combat_test.png")
+		print("COMBAT_TEST saved=", ProjectSettings.globalize_path("user://combat_test.png"))
+	get_tree().quit()

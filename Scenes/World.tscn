@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://Scripts/World.gd" id="1_world"]
 [ext_resource type="PackedScene" path="res://Scenes/Player.tscn" id="2_player"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://Scripts/AsciiOverlay.gd" id="7_ascii"]
 [ext_resource type="Script" path="res://Scripts/ForestGenerator.gd" id="8_forest"]
 [ext_resource type="Script" path="res://Scripts/DayNightCycle.gd" id="9_daynight"]
+[ext_resource type="Script" path="res://Scripts/PlayerHud.gd" id="10_hud"]
 
 [sub_resource type="Environment" id="Environment_world"]
 background_mode = 1
@@ -105,6 +106,10 @@ size = 13.0
 near = 0.05
 far = 140.0
 current = true
+
+[node name="PlayerHud" type="CanvasLayer" parent="."]
+layer = 30
+script = ExtResource("10_hud")
 
 [node name="AsciiLayer" type="CanvasLayer" parent="."]
 layer = 10
